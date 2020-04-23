@@ -107,7 +107,7 @@ function Registry:RegisterCommandObject (commandObject, fromCmdr)
 	end
 
 	if not fromCmdr and RunService:IsClient() and commandObject.Run then
-		warn(commandObject.Name, "command has `Run` in its command definition; prefer using `ClientRun` for new work.")
+		-- warn(commandObject.Name, "command has `Run` in its command definition; prefer using `ClientRun` for new work.")
 	end
 
 	if commandObject.AutoExec and RunService:IsClient() then
