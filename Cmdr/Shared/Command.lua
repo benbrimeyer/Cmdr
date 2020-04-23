@@ -2,6 +2,7 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local Argument = require(script.Parent.Argument)
 
+local IsClient = RunService:IsClient()
 local IsServer = RunService:IsServer()
 
 local Command = {}
@@ -124,12 +125,12 @@ function Command:Run ()
 		return beforeRunHook
 	end
 
-	if not IsServer and self.Object.Data and self.Data == nil then
+	if IsClient and self.Object.Data and self.Data == nil then
 		local values, length = self:GatherArgumentValues()
 		self.Data = self.Object.Data(self, unpack(values, 1, length))
 	end
 
-	if not IsServer and self.Object.ClientRun then
+	if IsClient and self.Object.ClientRun then
 		local values, length = self:GatherArgumentValues()
 		self.Response = self.Object.ClientRun(self, unpack(values, 1, length))
 	end
@@ -174,7 +175,7 @@ function Command:GetData ()
 		return self.Data
 	end
 
-	if self.Object.Data and not IsServer then
+	if self.Object.Data and IsClient then
 		self.Data = self.Object.Data(self)
 	end
 
@@ -197,7 +198,7 @@ end
 
 --- Sends an event message to all players
 function Command:BroadcastEvent(...)
-	if not IsServer then
+	if IsClient then
 		error("Can't broadcast event messages from the client.", 2)
 	end
 
