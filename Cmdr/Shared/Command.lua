@@ -179,7 +179,6 @@ end
 
 --- Sends an event message to a player
 function Command:SendEvent(player, event, ...)
-	assert(typeof(player) == "Instance", "Argument #1 must be a Player")
 	assert(player:IsA("Player"), "Argument #1 must be a Player")
 	assert(type(event) == "string", "Argument #2 must be a string")
 
