@@ -13,7 +13,7 @@ function CmdrServer.new(config)
 	local self = {
 		config = config,
 		Registry = nil,
-		ReplicatedRoot = script.Parent,
+		ReplicatedRoot = config.ReplicatedRoot or script.Parent,
 		RemoteFunction = nil,
 		RemoteEvent = nil,
 		Util = Util,
@@ -63,8 +63,8 @@ function CmdrServer:_initialize()
 	self:RegisterTypesIn(script.Parent.BuiltInTypes)
 
 	local RunService = self.config.RunService or game:GetService("RunService")
-	self.isClient = RunService:IsClient()
-	self.isServer = RunService:IsServer()
+	self.isClient = false --RunService:IsClient()
+	self.isServer = true --RunService:IsServer()
 
 	self.player = nil
 

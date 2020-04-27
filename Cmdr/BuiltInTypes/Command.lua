@@ -1,9 +1,9 @@
-local Util = require(script.Parent.Parent.Shared.Util)
+return function (registry)
+	local Util = registry.Cmdr.Util
 
-return function (cmdr)
 	local commandType = {
 		Transform = function (text)
-			local findCommand = Util.MakeFuzzyFinder(cmdr:GetCommandsAsStrings())
+			local findCommand = Util.MakeFuzzyFinder(registry:GetCommandsAsStrings())
 
 			return findCommand(text)
 		end;
@@ -21,6 +21,6 @@ return function (cmdr)
 		end;
 	}
 
-	cmdr:RegisterType("command", commandType)
-	cmdr:RegisterType("commands", Util.MakeListableType(commandType))
+	registry:RegisterType("command", commandType)
+	registry:RegisterType("commands", Util.MakeListableType(commandType))
 end
