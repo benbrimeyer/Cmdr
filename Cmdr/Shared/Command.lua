@@ -1,9 +1,4 @@
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
 local Argument = require(script.Parent.Argument)
-
-local IsClient = RunService:IsClient()
-local IsServer = RunService:IsServer()
 
 local Command = {}
 Command.__index = Command
@@ -125,12 +120,12 @@ function Command:Run ()
 		return beforeRunHook
 	end
 
-	if IsClient and self.Object.Data and self.Data == nil then
+	if self.Cmdr.isClient and self.Object.Data and self.Data == nil then
 		local values, length = self:GatherArgumentValues()
 		self.Data = self.Object.Data(self, unpack(values, 1, length))
 	end
 
-	if IsClient and self.Object.ClientRun then
+	if self.Cmdr.isClient and self.Object.ClientRun then
 		local values, length = self:GatherArgumentValues()
 		self.Response = self.Object.ClientRun(self, unpack(values, 1, length))
 	end
@@ -140,11 +135,11 @@ function Command:Run ()
 			local values, length = self:GatherArgumentValues()
 			self.Response = self.Object.Run(self, unpack(values, 1, length))
 
-		elseif IsServer then -- Uh oh, we're already on the server and there's no Run function.
+		elseif self.Cmdr.isServer then -- Uh oh, we're already on the server and there's no Run function.
 			if self.Object.ClientRun then
-				warn(self.Name, "command fell back to the server because ClientRun returned nil, but there is no server implementation! Either return a string from ClientRun, or create a server implementation for this command.")
+				self.Cmdr.Logger.warn(self.Name, "command fell back to the server because ClientRun returned nil, but there is no server implementation! Either return a string from ClientRun, or create a server implementation for this command.")
 			else
-				warn(self.Name, "command has no implementation!")
+				self.Cmdr.Logger.warn(self.Name, "command has no implementation!")
 			end
 
 			self.Response = "No implementation."
@@ -175,7 +170,7 @@ function Command:GetData ()
 		return self.Data
 	end
 
-	if self.Object.Data and IsClient then
+	if self.Object.Data and self.Cmdr.isClient then
 		self.Data = self.Object.Data(self)
 	end
 
@@ -188,17 +183,17 @@ function Command:SendEvent(player, event, ...)
 	assert(player:IsA("Player"), "Argument #1 must be a Player")
 	assert(type(event) == "string", "Argument #2 must be a string")
 
-	if IsServer then
+	if self.Cmdr.isServer then
 		self.Dispatcher.Cmdr.RemoteEvent:FireClient(player, event, ...)
 	elseif self.Dispatcher.Cmdr.Events[event] then
-		assert(player == Players.LocalPlayer, "Event messages can only be sent to the local player on the client.")
+		assert(player == self.Cmdr.player, "Event messages can only be sent to the local player on the client.")
 		self.Dispatcher.Cmdr.Events[event](...)
 	end
 end
 
 --- Sends an event message to all players
 function Command:BroadcastEvent(...)
-	if IsClient then
+	if self.Cmdr.isClient then
 		error("Can't broadcast event messages from the client.", 2)
 	end
 

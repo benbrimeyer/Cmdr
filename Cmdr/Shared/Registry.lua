@@ -3,27 +3,35 @@ local RunService = game:GetService("RunService")
 local Util = require(script.Parent.Util)
 
 --- The registry keeps track of all the commands and types that Cmdr knows about.
-local Registry = {
-	TypeMethods = Util.MakeDictionary({"Transform", "Validate", "Autocomplete", "Parse", "DisplayName", "Listable", "ValidateOnce", "Prefixes"});
-	CommandMethods = Util.MakeDictionary({"Name", "Aliases", "AutoExec", "Description", "Args", "Run", "ClientRun", "Data", "Group"});
-	CommandArgProps = Util.MakeDictionary({"Name", "Type", "Description", "Optional", "Default"});
-	Types = {};
-	TypeAliases = {};
-	Commands = {};
-	CommandsArray = {};
-	Cmdr = nil;
-	Hooks = {
-		BeforeRun = {};
-		AfterRun = {}
-	};
-	Stores = setmetatable({}, {
-		__index = function (self, k)
-			self[k] = {}
-			return self[k]
-		end
-	});
-	AutoExecBuffer = {};
-}
+local Registry = {}
+Registry.__index = Registry
+
+function Registry.new(cmdr)
+	local self = {
+		TypeMethods = Util.MakeDictionary({"Transform", "Validate", "Autocomplete", "Parse", "DisplayName", "Listable", "ValidateOnce", "Prefixes"});
+		CommandMethods = Util.MakeDictionary({"Name", "Aliases", "AutoExec", "Description", "Args", "Run", "ClientRun", "Data", "Group"});
+		CommandArgProps = Util.MakeDictionary({"Name", "Type", "Description", "Optional", "Default"});
+		Types = {};
+		TypeAliases = {};
+		Commands = {};
+		CommandsArray = {};
+		Cmdr = cmdr;
+		Hooks = {
+			BeforeRun = {};
+			AfterRun = {}
+		};
+		Stores = setmetatable({}, {
+			__index = function (self, k)
+				self[k] = {}
+				return self[k]
+			end
+		});
+		AutoExecBuffer = {};
+	}
+	setmetatable(self, Registry)
+
+	return self
+end
 
 --- Registers a type in the system.
 -- name: The type Name. This must be unique.
@@ -73,9 +81,10 @@ end
 function Registry:RegisterTypesIn (container)
 	for _, object in pairs(container:GetChildren()) do
 		if object:IsA("ModuleScript") then
-			object.Parent = self.Cmdr.ReplicatedRoot.Types
+			local clone = object:Clone()
+			clone.Parent = self.Cmdr.ReplicatedRoot.Types
 
-			require(object)(self)
+			require(clone)(self)
 		else
 			self:RegisterTypesIn(object)
 		end
@@ -106,11 +115,11 @@ function Registry:RegisterCommandObject (commandObject, fromCmdr)
 		end
 	end
 
-	if not fromCmdr and RunService:IsClient() and commandObject.Run then
-		-- warn(commandObject.Name, "command has `Run` in its command definition; prefer using `ClientRun` for new work.")
+	if not fromCmdr and self.Cmdr.isClient and commandObject.Run then
+		self.Cmdr.Logger.warn(commandObject.Name, "command has `Run` in its command definition; prefer using `ClientRun` for new work.")
 	end
 
-	if commandObject.AutoExec and RunService:IsClient() then
+	if commandObject.AutoExec and self.Cmdr.isClient then
 		table.insert(self.AutoExecBuffer, commandObject.AutoExec)
 		self:FlushAutoExecBufferDeferred()
 	end
@@ -137,7 +146,8 @@ end
 --- Registers a command definition and its server equivalent.
 -- Handles replicating the definition to the client.
 function Registry:RegisterCommand (commandScript, commandServerScript, filter)
-	local commandObject = require(commandScript)
+	local clonedCommandScript = commandScript:Clone()
+	local commandObject = require(clonedCommandScript)
 
 	if commandServerScript then
 		commandObject.Run = require(commandServerScript)
@@ -149,7 +159,7 @@ function Registry:RegisterCommand (commandScript, commandServerScript, filter)
 
 	self:RegisterCommandObject(commandObject)
 
-	commandScript.Parent = self.Cmdr.ReplicatedRoot.Commands
+	clonedCommandScript.Parent = self.Cmdr.ReplicatedRoot.Commands
 end
 
 --- A helper method that registers all commands inside a specific container.
@@ -177,7 +187,7 @@ function Registry:RegisterCommandsIn (container, filter)
 
 	for skippedScript in pairs(skippedServerScripts) do
 		if not usedServerScripts[skippedScript] then
-			warn("Command script " .. skippedScript.Name .. " was skipped because it has 'Server' in its name, and has no equivalent shared script.")
+			self.Cmdr.Logger.warn("Command script " .. skippedScript.Name .. " was skipped because it has 'Server' in its name, and has no equivalent shared script.")
 		end
 	end
 end
@@ -269,7 +279,5 @@ function Registry:FlushAutoExecBuffer()
 end
 
 return function (cmdr)
-	Registry.Cmdr = cmdr
-
-	return Registry
+	return Registry.new(cmdr)
 end

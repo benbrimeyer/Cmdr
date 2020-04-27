@@ -1,17 +1,22 @@
-local RunService = game:GetService("RunService")
 local TeleportService = game:GetService("TeleportService")
-local Players = game:GetService("Players")
 local Util = require(script.Parent.Util)
 local Command = require(script.Parent.Command)
 
 local HISTORY_SETTING_NAME = "CmdrCommandHistory"
 
 --- The dispatcher handles creating and running commands during the game.
-local Dispatcher = {
-	Cmdr = nil;
-	Registry = nil;
+local Dispatcher = {}
+Dispatcher.__index = Dispatcher
 
-}
+function Dispatcher.new(cmdr)
+	local self = {
+		Cmdr = cmdr;
+		Registry = cmdr.Registry;
+	}
+	setmetatable(self, Dispatcher)
+
+	return self
+end
 
 --- Takes in raw command information and generates a command out of it.
 -- text and executor are required arguments.
@@ -19,7 +24,7 @@ local Dispatcher = {
 -- data is for special networked Data about the command gathered on the client. Purely Optional.
 -- returns the command if successful, or (false, errorText) if not
 function Dispatcher:Evaluate (text, executor, allowIncompleteArguments, data)
-	if RunService:IsClient() == true and executor ~= Players.LocalPlayer then
+	if self.Cmdr.isClient == true and executor ~= self.Cmdr.player then
 		error("Can't evaluate a command that isn't sent by the local player.")
 	end
 
@@ -56,15 +61,14 @@ end
 --- A helper that evaluates and runs the command in one go.
 -- Either returns any validation errors as a string, or the output of the command as a string. Definitely a string, though.
 function Dispatcher:EvaluateAndRun (text, executor, options)
-	executor = executor or Players.LocalPlayer
+	executor = executor or self.Cmdr.player
 	options = options or {}
 
-	if RunService:IsClient() and options.IsHuman then
+	if self.Cmdr.isClient and options.IsHuman then
 		self:PushHistory(text)
 	end
 
 	local command, errorText = self:Evaluate(text, executor, nil, options.Data)
-
 	if not command then
 		return errorText
 	end
@@ -80,15 +84,14 @@ function Dispatcher:EvaluateAndRun (text, executor, options)
 	end)
 
 	if not ok then
-		warn(("Error occurred while evaluating command string %q\n%s"):format(text, out))
+		self.Cmdr.Logger.warn(("Error occurred while evaluating command string %q\n%s"):format(text, out))
 	end
-
 	return ok and out or "An error occurred while running this command."
 end
 
 --- Send text as the local user to remote server to be evaluated there.
 function Dispatcher:Send (text, data)
-	if RunService:IsClient() == false then
+	if self.Cmdr.isClient == false then
 		error("Dispatcher:Send can only be called from the client.")
 	end
 
@@ -100,7 +103,7 @@ end
 --- Invoke a command programmatically as the local user e.g. from a settings menu
 -- Command should be the first argument, all arguments afterwards should be the arguments to the command.
 function Dispatcher:Run (...)
-	if not Players.LocalPlayer then
+	if not self.Cmdr.player then
 		error("Dispatcher:Run can only be called from the client.")
 	end
 
@@ -111,7 +114,7 @@ function Dispatcher:Run (...)
 		text = text .. " " .. tostring(args[i])
 	end
 
-	local command, errorText = self:Evaluate(text, Players.LocalPlayer)
+	local command, errorText = self:Evaluate(text, self.Cmdr.player)
 
 	if not command then
 		error(errorText) -- We do a full-on error here since this is code-invoked and they should know better.
@@ -142,7 +145,7 @@ function Dispatcher:RunHooks(hookName, ...)
 end
 
 function Dispatcher:PushHistory(text)
-	assert(RunService:IsClient(), "PushHistory may only be used from the client.")
+	assert(self.Cmdr.isClient, "PushHistory may only be used from the client.")
 
 	local history = self:GetHistory()
 
@@ -157,14 +160,11 @@ function Dispatcher:PushHistory(text)
 end
 
 function Dispatcher:GetHistory()
-	assert(RunService:IsClient(), "GetHistory may only be used from the client.")
+	assert(self.Cmdr.isClient, "GetHistory may only be used from the client.")
 
 	return TeleportService:GetTeleportSetting(HISTORY_SETTING_NAME) or {}
 end
 
 return function (cmdr)
-	Dispatcher.Cmdr = cmdr
-	Dispatcher.Registry = cmdr.Registry
-
-	return Dispatcher
+	return Dispatcher.new(cmdr)
 end

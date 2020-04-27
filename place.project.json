@@ -1,0 +1,29 @@
+{
+	"name": "Cmdr",
+	"tree": {
+		"$className": "DataModel",
+
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+			"Packages": {
+				"$path": "Packages",
+
+				"Cmdr": {
+					"$path": "Cmdr"
+				}
+			}
+		},
+
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+
+			"Tests": {
+				"$path": "bin/run-tests.server.lua"
+			}
+		},
+
+		"Tests": {
+			"$path": "tests"
+		}
+	}
+}
