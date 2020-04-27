@@ -56,9 +56,10 @@ function CmdrClient:_initialize()
 
 	self.isClient = true
 	self.isServer = false
+	self.player = self.config.player
 
 	if not self.config.Gui then
-		local player = self.config.player
+		local player = self.player
 		if player and StarterGui:WaitForChild("Cmdr") and wait() and player:WaitForChild("PlayerGui"):FindFirstChild("Cmdr") == nil then
 			StarterGui.Cmdr:Clone().Parent = player.PlayerGui
 		end
