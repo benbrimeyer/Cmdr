@@ -74,6 +74,11 @@ function CmdrServer:_initialize()
 			CreateGui()
 		end
 	end
+
+	-- Handle command invocations from the clients.
+	self.RemoteFunction.OnServerInvoke = function (player, text, options)
+		return self.Dispatcher:EvaluateAndRun(text, player, options)
+	end
 end
 
 function CmdrServer:getVersion()
