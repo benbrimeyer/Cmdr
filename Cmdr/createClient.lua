@@ -54,9 +54,8 @@ function CmdrClient:_initialize()
 	self.RemoteFunction = self.config.RemoteFunction or self.ReplicatedRoot:WaitForChild("CmdrFunction");
 	self.RemoteEvent = self.config.RemoteEvent or self.ReplicatedRoot:WaitForChild("CmdrEvent");
 
-	local RunService = self.config.RunService or game:GetService("RunService")
-	self.isClient = true --RunService:IsClient()
-	self.isServer = false --RunService:IsServer()
+	self.isClient = true
+	self.isServer = false
 
 	if not self.config.Gui then
 		local player = self.config.player

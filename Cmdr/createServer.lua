@@ -62,9 +62,8 @@ function CmdrServer:_initialize()
 
 	self:RegisterTypesIn(script.Parent.BuiltInTypes)
 
-	local RunService = self.config.RunService or game:GetService("RunService")
-	self.isClient = false --RunService:IsClient()
-	self.isServer = true --RunService:IsServer()
+	self.isClient = false
+	self.isServer = true
 
 	self.player = nil
 
