@@ -81,10 +81,19 @@ end
 function Registry:RegisterTypesIn (container)
 	for _, object in pairs(container:GetChildren()) do
 		if object:IsA("ModuleScript") then
+			-- We clone here so we can have multiple Cmdr server instances
 			local clone = object:Clone()
+			-- We need to keep track if a previous server instance has replicated before us
+			local removeWhenDone = self.Cmdr.ReplicatedRoot.Types:FindFirstChild(object.Name)
+			-- To ensure all moduleScripts execute with the same Parent
 			clone.Parent = self.Cmdr.ReplicatedRoot.Types
 
 			require(clone)(self)
+
+			-- Remove clone so clients don't see duplicates and throw
+			if removeWhenDone then
+				removeWhenDone:Destroy()
+			end
 		else
 			self:RegisterTypesIn(object)
 		end

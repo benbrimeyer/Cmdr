@@ -129,8 +129,33 @@ return function()
 
 			local response = CmdrClient.Dispatcher:EvaluateAndRun("echo should work")
 			expect(response).to.equal("should work")
+		end)
 
+		it("SHOULD work for multiple clients", function()
+			local folder = Instance.new("Folder")
+			local ReplicatedStorage = game:GetService("ReplicatedStorage")
+			local Cmdr = require(ReplicatedStorage.Packages.Cmdr)
 
+			local configuration = Cmdr.validateConfig({
+				ReplicatedRoot = folder,
+				RemoteEvent = RemoteEvent,
+				RemoteFunction = RemoteFunction,
+				Player = nil,
+				Gui = true,
+				Logger = Logger,
+			})
+
+			local CmdrServer = Cmdr.createServer(configuration)
+			CmdrServer:RegisterDefaultCommands()
+
+			local firstClient = Cmdr.createClient(configuration)
+
+			local firstResponse = firstClient.Dispatcher:EvaluateAndRun("echo should work")
+			expect(firstResponse).to.equal("should work")
+
+			local secondClient = Cmdr.createClient(configuration)
+			local secondResponse = secondClient.Dispatcher:EvaluateAndRun("echo should work as well")
+			expect(secondResponse).to.equal("should work as well")
 		end)
 	end)
 end
