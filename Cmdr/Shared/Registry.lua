@@ -124,10 +124,6 @@ function Registry:RegisterCommandObject (commandObject, fromCmdr)
 		end
 	end
 
-	if not fromCmdr and self.Cmdr.isClient and commandObject.Run then
-		self.Cmdr.Logger.warn(commandObject.Name, "command has `Run` in its command definition; prefer using `ClientRun` for new work.")
-	end
-
 	if commandObject.AutoExec and self.Cmdr.isClient then
 		table.insert(self.AutoExecBuffer, commandObject.AutoExec)
 		self:FlushAutoExecBufferDeferred()
